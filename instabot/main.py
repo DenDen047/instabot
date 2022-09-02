@@ -1,15 +1,23 @@
 import yaml
+import collections
+
+import instagrapi
 from instagrapi import Client
 
 from typing import List
 
 
-def get_photos(
+def get_hashtags_from_text(text: str) -> List[str]:
+    return list({tag.strip("#") for tag in text.split() if tag.startswith("#")})
+
+
+def new_post_from_user(
     client: Client,
     username: str,
     folder: str,
-    top_n: int = 3
-) -> List[str]:
+    top_img_n: int = 3,
+    top_tag_n: int = 20,
+):
     # get all the medias
     user_id = client.user_id_from_username(username)
     medias = client.user_medias(user_id)
@@ -17,7 +25,9 @@ def get_photos(
     # get most popular pictures by the number of like
     medias = sorted(medias, reverse=True, key=lambda x: x.like_count)
     media_pks = []
+    hashtags = []
     for m in medias:
+        # get media
         if m.media_type == 1:   # Photo
             media_pks.append(m.pk)
         elif m.media_type == 8 and m.resources[0].media_type == 1:  # Album
@@ -25,7 +35,7 @@ def get_photos(
         else:
             continue
 
-        if len(media_pks) >= top_n:
+        if len(media_pks) >= top_img_n:
             break
 
     # download the pictures
@@ -34,7 +44,22 @@ def get_photos(
         img_fpath = client.photo_download(pk, folder)
         img_fpaths.append(img_fpath)
 
-    return img_fpaths
+    # get popular hashtags
+    hashtags = []
+    for m in medias:
+        hashtags += get_hashtags_from_text(m.caption_text)
+    top_hashtags = collections.Counter(hashtags).most_common(top_tag_n)
+
+    # make the caption
+    caption = f'Model Credit: {username}' + '.\n'*7 + '#' + ' #'.join([h[0] for h in top_hashtags])
+
+    # upload the new post
+    uploaded_media = client.album_upload(
+        img_fpaths,
+        caption=caption
+    )
+
+    return uploaded_media
 
 
 def main():
@@ -48,9 +73,9 @@ def main():
     client.login(account_info['username'], account_info['password'])
 
     # get photos from a target account
-    img_fpaths = get_photos(
+    img_fpaths = new_post_from_user(
         client,
-        username='amypanaretou',
+        username='morganketzner',
         folder=config['resources']['image_folder']
     )
     print(img_fpaths)
