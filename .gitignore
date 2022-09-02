@@ -201,3 +201,4 @@ cython_debug/
 config.yaml
 tmp/**
 db.json
+account_list.txt

@@ -80,7 +80,7 @@ def main():
     # get photos from a target account
     new_post_from_user(
         client,
-        username='morganketzner',
+        username='',
         folder=config['resources']['image_folder']
     )
 
