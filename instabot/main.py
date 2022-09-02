@@ -3,8 +3,7 @@ import collections
 
 import instagrapi
 from instagrapi import Client
-import tinydb
-from tinydb import TinyDB, Query
+import sqlite3
 
 from typing import List
 
@@ -53,7 +52,7 @@ def new_post_from_user(
     top_hashtags = collections.Counter(hashtags).most_common(top_tag_n)
 
     # make the caption
-    caption = f'Model Credit: {username}' + '.\n'*7 + '#' + ' #'.join([h[0] for h in top_hashtags])
+    caption = f'Model Credit: {username}\n' + '.\n'*5 + '#' + ' #'.join([h[0] for h in top_hashtags])
 
     # upload the new post
     uploaded_media = client.album_upload(
@@ -70,7 +69,14 @@ def main():
         config = yaml.safe_load(f)
 
     # load database
-    db = TinyDB('db.json')
+    conn = sqlite3.connect('db.sqlite')
+
+    # load the account list
+    with open('account_list.txt') as f:
+        target_accounts = [l.strip() for l in f.readlines()]
+
+    # add new users
+
 
     # prepare the client module for my acccount
     client = Client()
