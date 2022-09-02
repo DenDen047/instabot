@@ -5,14 +5,14 @@ from typing import List
 
 
 def get_photos(
-    cl: Client,
+    client: Client,
     username: str,
     folder: str,
     top_n: int = 3
 ) -> List[str]:
     # get all the medias
-    user_id = cl.user_id_from_username(username)
-    medias = cl.user_medias(user_id)
+    user_id = client.user_id_from_username(username)
+    medias = client.user_medias(user_id)
 
     # get most popular pictures by the number of like
     medias = sorted(medias, reverse=True, key=lambda x: x.like_count)
@@ -31,22 +31,30 @@ def get_photos(
     # download the pictures
     img_fpaths = []
     for pk in media_pks:
-        img_fpath = cl.photo_download(pk, folder)
+        img_fpath = client.photo_download(pk, folder)
         img_fpaths.append(img_fpath)
 
     return img_fpaths
 
 
-if __name__ == '__main__':
+def main():
     # load config
     with open('config.yaml', mode='rb') as f:
         config = yaml.safe_load(f)
 
     # prepare the client module for my acccount
-    cl = Client()
+    client = Client()
     account_info = config['account']
-    cl.login(account_info['username'], account_info['password'])
+    client.login(account_info['username'], account_info['password'])
 
     # get photos from a target account
-    img_fpaths = get_photos(cl, username='', folder=config['resources']['image_folder'])
+    img_fpaths = get_photos(
+        client,
+        username='amypanaretou',
+        folder=config['resources']['image_folder']
+    )
     print(img_fpaths)
+
+
+if __name__ == '__main__':
+    main()
