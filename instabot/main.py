@@ -3,6 +3,8 @@ import collections
 
 import instagrapi
 from instagrapi import Client
+import tinydb
+from tinydb import TinyDB, Query
 
 from typing import List
 
@@ -67,18 +69,20 @@ def main():
     with open('config.yaml', mode='rb') as f:
         config = yaml.safe_load(f)
 
+    # load database
+    db = TinyDB('db.json')
+
     # prepare the client module for my acccount
     client = Client()
     account_info = config['account']
     client.login(account_info['username'], account_info['password'])
 
     # get photos from a target account
-    img_fpaths = new_post_from_user(
+    new_post_from_user(
         client,
         username='morganketzner',
         folder=config['resources']['image_folder']
     )
-    print(img_fpaths)
 
 
 if __name__ == '__main__':

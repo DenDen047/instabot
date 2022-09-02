@@ -1,3 +1,4 @@
 instagrapi
 pyyaml
 Pillow
+tinydb
