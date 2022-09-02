@@ -1,6 +1,41 @@
 import yaml
 from instagrapi import Client
 
+from typing import List
+
+
+def get_photos(
+    cl: Client,
+    username: str,
+    folder: str,
+    top_n: int = 3
+) -> List[str]:
+    # get all the medias
+    user_id = cl.user_id_from_username(username)
+    medias = cl.user_medias(user_id)
+
+    # get most popular pictures by the number of like
+    medias = sorted(medias, reverse=True, key=lambda x: x.like_count)
+    media_pks = []
+    for m in medias:
+        if m.media_type == 1:   # Photo
+            media_pks.append(m.pk)
+        elif m.media_type == 8 and m.resources[0].media_type == 1:  # Album
+            media_pks.append(m.resources[0].pk)
+        else:
+            continue
+
+        if len(media_pks) >= top_n:
+            break
+
+    # download the pictures
+    img_fpaths = []
+    for pk in media_pks:
+        img_fpath = cl.photo_download(pk, folder)
+        img_fpaths.append(img_fpath)
+
+    return img_fpaths
+
 
 if __name__ == '__main__':
     # load config
@@ -12,5 +47,6 @@ if __name__ == '__main__':
     account_info = config['account']
     cl.login(account_info['username'], account_info['password'])
 
-    user_id = cl.user_id_from_username("emily_ratajkowski_official")
-    medias = cl.user_medias(user_id, 20)
+    # get photos from a target account
+    img_fpaths = get_photos(cl, username='', folder=config['resources']['image_folder'])
+    print(img_fpaths)
