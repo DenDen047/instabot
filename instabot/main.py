@@ -3,7 +3,7 @@ import collections
 
 import instagrapi
 from instagrapi import Client
-import sqlite3
+import tinydb
 
 from typing import List
 
@@ -69,14 +69,21 @@ def main():
         config = yaml.safe_load(f)
 
     # load database
-    conn = sqlite3.connect('db.sqlite')
+    db = tinydb.TinyDB('db.json')
 
     # load the account list
     with open('account_list.txt') as f:
         target_accounts = [l.strip() for l in f.readlines()]
 
     # add new users
-
+    Account = tinydb.Query()
+    for username in target_accounts:
+        r = db.search(Account.username == username)
+        if len(r) == 0:
+            db.insert({
+                'username': username
+            })
+        print(r)
 
     # prepare the client module for my acccount
     client = Client()
