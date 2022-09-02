@@ -1,4 +1,3 @@
-#!/usr/local/bin/python
 import yaml
 from instagrapi import Client
 
@@ -8,6 +7,7 @@ if __name__ == '__main__':
     with open('config.yaml', mode='rb') as f:
         config = yaml.safe_load(f)
 
+    # prepare the client module for my acccount
     cl = Client()
     account_info = config['account']
     cl.login(account_info['username'], account_info['password'])
