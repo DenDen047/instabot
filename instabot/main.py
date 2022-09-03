@@ -3,7 +3,6 @@ import collections
 from datetime import datetime
 
 import instagrapi
-from instagrapi import Client
 import tinydb
 
 from typing import List, Any
@@ -13,7 +12,7 @@ class MyClient(instagrapi.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def get_medias_from_username(self, username: str):
+    def get_medias_from_username(self, username: str) -> List[instagrapi.types.Media]:
         user_id = self.user_id_from_username(username)
         medias = self.user_medias(user_id)
         return medias
@@ -24,16 +23,14 @@ def get_hashtags_from_text(text: str) -> List[str]:
 
 
 def new_post_from_user(
-    client: Client,
+    client: instagrapi.Client,
     username: str,
     folder: str,
     top_img_n: int = 3,
     top_tag_n: int = 20,
 ):
-    # get all the medias
-    medias = client.get_medias_from_username(username)
-
     # get most popular pictures by the number of like
+    medias = client.get_medias_from_username(username)
     medias = sorted(medias, reverse=True, key=lambda x: x.like_count)
     media_pks = []
     hashtags = []
@@ -60,17 +57,19 @@ def new_post_from_user(
     for m in medias:
         hashtags += get_hashtags_from_text(m.caption_text)
     top_hashtags = collections.Counter(hashtags).most_common(top_tag_n)
+    hashtags = [h[0] for h in top_hashtags]
 
     # make the caption
-    caption = f'Model Credit: {username}\n' + '.\n'*5 + '#' + ' #'.join([h[0] for h in top_hashtags])
+    caption = f'Model Credit: {username}\n' + '.\n'*5 + '#' + ' #'.join(hashtags)
 
     # upload the new post
-    uploaded_media = client.album_upload(
-        img_fpaths,
-        caption=caption
-    )
+    # uploaded_media = client.album_upload(
+    #     img_fpaths,
+    #     caption=caption
+    # )
+    uploaded_media = None
 
-    return uploaded_media
+    return uploaded_media, media_pks, hashtags
 
 
 def main():
@@ -94,7 +93,7 @@ def main():
                 'username': username
             })
 
-    target_account = username
+    target_username = username
 
     # prepare the client module for my acccount
     client = MyClient()
@@ -102,15 +101,22 @@ def main():
     client.login(account_info['username'], account_info['password'])
 
     # get photos from a target account
-    new_post_from_user(
+    _, media_pks, hashtags = new_post_from_user(
         client,
-        username=target_account,
+        username=target_username,
         folder=config['resources']['image_folder']
     )
 
     # record the uploaded date
     now = datetime.now()
-    db.update({'last_upload': str(now)}, Account.username == target_account)
+    db.update(
+        {
+            'last_upload': str(now),
+            'used_media_pks': media_pks,
+            'used_hashtags': hashtags,
+        },
+        Account.username == target_username
+    )
 
 
 if __name__ == '__main__':
