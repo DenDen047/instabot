@@ -1,11 +1,22 @@
 import yaml
 import collections
+from datetime import datetime
 
 import instagrapi
 from instagrapi import Client
 import tinydb
 
-from typing import List
+from typing import List, Any
+
+
+class MyClient(instagrapi.Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def get_medias_from_username(self, username: str):
+        user_id = self.user_id_from_username(username)
+        medias = self.user_medias(user_id)
+        return medias
 
 
 def get_hashtags_from_text(text: str) -> List[str]:
@@ -20,8 +31,7 @@ def new_post_from_user(
     top_tag_n: int = 20,
 ):
     # get all the medias
-    user_id = client.user_id_from_username(username)
-    medias = client.user_medias(user_id)
+    medias = client.get_medias_from_username(username)
 
     # get most popular pictures by the number of like
     medias = sorted(medias, reverse=True, key=lambda x: x.like_count)
@@ -73,29 +83,34 @@ def main():
 
     # load the account list
     with open('account_list.txt') as f:
-        target_accounts = [l.strip() for l in f.readlines()]
+        usernames = [l.strip() for l in f.readlines()]
 
     # add new users
     Account = tinydb.Query()
-    for username in target_accounts:
+    for username in usernames:
         r = db.search(Account.username == username)
         if len(r) == 0:
             db.insert({
                 'username': username
             })
-        print(r)
+
+    target_account = username
 
     # prepare the client module for my acccount
-    client = Client()
+    client = MyClient()
     account_info = config['account']
     client.login(account_info['username'], account_info['password'])
 
     # get photos from a target account
     new_post_from_user(
         client,
-        username='',
+        username=target_account,
         folder=config['resources']['image_folder']
     )
+
+    # record the uploaded date
+    now = datetime.now()
+    db.update({'last_upload': str(now)}, Account.username == target_account)
 
 
 if __name__ == '__main__':
