@@ -103,8 +103,12 @@ def main():
     for target_user in target_users:
         target_username = target_user['username']
 
-        # get most popular pictures by the number of like
+        # get medias
         medias = client.get_medias_from_username(target_username)
+        if len(medias) == 0:
+            continue
+
+        # get most popular pictures by the number of like
         medias = sorted(medias, reverse=True, key=lambda x: x.like_count)
         top_medias = []
         hashtags = []
@@ -154,7 +158,7 @@ def main():
         )
 
         # wait for a while
-        time.sleep(3600 * 4)
+        time.sleep(3600 * 2)
 
 
 if __name__ == '__main__':
