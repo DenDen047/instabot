@@ -1,4 +1,5 @@
 import yaml
+import time
 import collections
 from datetime import datetime, timedelta
 
@@ -19,6 +20,7 @@ class MyClient(instagrapi.Client):
 
 
 def get_hashtags_from_text(text: str) -> List[str]:
+    text = text.replace('#', ' #')
     return list({tag.strip("#") for tag in text.split() if tag.startswith("#")})
 
 
@@ -35,6 +37,8 @@ def new_post(
     for m in medias:
         if m.media_type == 1:   # Photo
             media_fpath = client.photo_download(m.pk, folder)
+            if media_fpath.suffix != '.jpg':
+                media_fpath = media_fpath.rename(media_fpath.with_suffix('.jpg'))
         elif m.media_type == 2 and m.product_type == 'feed':
             media_fpath = client.video_download(m.pk, folder)
         elif m.media_type == 2 and m.product_type == 'igtv':
@@ -79,7 +83,7 @@ def main():
         usernames = [l.strip() for l in f.readlines()]
         # add users
         for username in usernames:
-            db.upinsert({'username': username}, Account.username == username)
+            db.upsert({'username': username}, Account.username == username)
         # remove every lines
         f.seek(0)
         f.truncate()
@@ -148,6 +152,9 @@ def main():
             },
             Account.username == target_username
         )
+
+        # wait for a while
+        time.sleep(3600 * 4)
 
 
 if __name__ == '__main__':
