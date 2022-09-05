@@ -115,16 +115,17 @@ def main():
         for m in medias:
             # get media
             if m.media_type == 1 or m.media_type == 2:   # Photo/Video
-                pass
+                tmp_medias = [m]
             elif m.media_type == 8:  # Album
-                m = m.resources[0]
+                tmp_medias = m.resources
             else:
                 continue
 
             # check the duplication
             target_account = db.search(Account.username == target_username)[0]
-            if ('used_media_pks' not in target_account.keys()) or (m.pk not in target_account.used_media_pks):
-                top_medias.append(m)
+            for _m in tmp_medias:
+                if ('used_media_pks' not in target_account.keys()) or (_m.pk not in target_account.used_media_pks):
+                    top_medias.append(_m)
 
             if len(top_medias) >= top_media_n:
                 break
@@ -158,7 +159,7 @@ def main():
         )
 
         # wait for a while
-        time.sleep(3600 * 2)
+        time.sleep(3600 / 2)
 
 
 if __name__ == '__main__':
