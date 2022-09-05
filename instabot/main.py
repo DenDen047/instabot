@@ -95,13 +95,13 @@ def main():
         | (today - timedelta(days=60) > Account.last_upload.map(datetime.fromisoformat))
     )
 
-    # prepare the client module for my acccount
-    client = MyClient()
-    account_info = config['account']
-    client.login(account_info['username'], account_info['password'])
-
     for target_user in target_users:
         target_username = target_user['username']
+
+        # prepare the client module for my acccount
+        client = MyClient()
+        account_info = config['account']
+        client.login(account_info['username'], account_info['password'])
 
         # get medias
         medias = client.get_medias_from_username(target_username)
