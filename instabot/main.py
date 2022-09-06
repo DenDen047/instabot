@@ -51,7 +51,7 @@ def new_post(
         media_fpaths.append(media_fpath)
 
     # make the caption
-    caption = f'Model Credit: {username}\n' + '.\n'*5 + '#' + ' #'.join(hashtags)
+    caption = f'Follow us with beautiful model: {username}\n' + '.\n'*5 + '#' + ' #'.join(hashtags)
 
     # upload the new post
     uploaded_media = client.album_upload(
