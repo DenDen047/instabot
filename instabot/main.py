@@ -95,13 +95,13 @@ def main():
         | (today - timedelta(days=60) > Account.last_upload.map(datetime.fromisoformat))
     )
 
+    # prepare the client module for my acccount
+    client = MyClient()
+    account_info = config['account']
+    client.login(account_info['username'], account_info['password'])
+
     for target_user in target_users:
         target_username = target_user['username']
-
-        # prepare the client module for my acccount
-        client = MyClient()
-        account_info = config['account']
-        client.login(account_info['username'], account_info['password'])
 
         # get medias
         medias = client.get_medias_from_username(target_username)
@@ -126,14 +126,12 @@ def main():
             for _m in tmp_medias:
                 if ('used_media_pks' not in target_account.keys()) or (_m.pk not in target_account.used_media_pks):
                     top_medias.append(_m)
+                    hashtags += get_hashtags_from_text(m.caption_text)
 
             if len(top_medias) >= top_media_n:
                 break
 
         # get popular hashtags
-        hashtags = []
-        for m in medias:
-            hashtags += get_hashtags_from_text(m.caption_text)
         top_hashtags = collections.Counter(hashtags).most_common(top_tag_n)
         top_hashtags = [h[0] for h in top_hashtags]
 
@@ -159,7 +157,12 @@ def main():
         )
 
         # wait for a while
-        time.sleep(3600 / 2)
+        time.sleep(3600 * 2)
+
+        # prepare the client module for my acccount
+        client = MyClient()
+        account_info = config['account']
+        client.login(account_info['username'], account_info['password'])
 
 
 if __name__ == '__main__':
