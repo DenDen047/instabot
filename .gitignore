@@ -203,3 +203,4 @@ tmp/**
 db.json
 db.sqlite
 account_list.txt
+bestmodelselect_db.json
