@@ -1,6 +1,7 @@
 import re
 import sys
 import yaml
+import random
 import time
 import collections
 from datetime import datetime, timedelta
@@ -95,11 +96,13 @@ def main():
         f.truncate()
 
     # get target users
-    today = datetime.now()
-    target_users = db.search(
-        (~ Account.last_upload.exists()) \
-        | (today - timedelta(days=7) > Account.last_upload.map(datetime.fromisoformat))
-    )
+    target_users = db.all()
+    # today = datetime.now()
+    # target_users = db.search(
+    #     (~ Account.last_upload.exists()) \
+    #     | (today - timedelta(days=7) > Account.last_upload.map(datetime.fromisoformat))
+    # )
+    random.shuffle(target_users)
 
     # prepare the client module for my acccount
     client = MyClient()
@@ -125,7 +128,7 @@ def main():
                 ) and \
                 (   # no duplication
                     ('used_media_pks' not in target_account.keys()) \
-                    or (media.pk not in target_account.used_media_pks)
+                    or (media.pk not in target_account['used_media_pks'])
                 )
             ):
                 continue
@@ -156,10 +159,13 @@ def main():
                 model_account = ''
 
             # get hashtags
-            hashtags = config['templates']['hashtags']
+            hashtags = random.sample(config['templates']['hashtags'], 30)
 
             # make the caption
-            caption = f'Model {model_account}\n-\n#' + ' #'.join(hashtags)
+            caption = 'Follow @' + account_info['username'] + '\n'
+            caption += '.\n' * 4
+            caption += f'👤 Model: ★ @{model_account} ☆\n' + '.\n'*3 if len(model_account) > 0 else ''
+            caption += '#' + ' #'.join(hashtags)
 
             # upload the new post
             if len(media_fpaths) == 1:
@@ -175,7 +181,7 @@ def main():
             # handle exceptions
             if uploaded_media.caption_text == '':
                 print('Error: Failed upload (empty caption)')
-                raise
+                sys.exit(1)
 
             # record the uploaded date
             media_pks = list(set([media.pk] + target_account.get('used_media_pks', [])))
@@ -187,7 +193,8 @@ def main():
                 Account.username == target_username
             )
 
-            sys.exit(0)
+            break
+        time.sleep(3600 * 4)
 
 
 if __name__ == '__main__':
