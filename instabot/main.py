@@ -13,6 +13,11 @@ import tinydb
 from typing import List, Any
 
 
+def get_hashtags_from_text(text: str) -> List[str]:
+    text = text.replace('#', ' #')
+    return list({tag.strip("#") for tag in text.split() if tag.startswith("#")})
+
+
 class MyClient(instagrapi.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -22,10 +27,19 @@ class MyClient(instagrapi.Client):
         medias = self.user_medias(user_id)
         return medias
 
+    def get_top_hashtags(self, username, n=30) -> List[str]:
+        medias = self.get_medias_from_username(username)
+        if len(medias) == 0:
+            print(f'ERROR: could not get any media from @{username}')
+            return None
 
-def get_hashtags_from_text(text: str) -> List[str]:
-    text = text.replace('#', ' #')
-    return list({tag.strip("#") for tag in text.split() if tag.startswith("#")})
+        hashtags = []
+        for m in medias:
+            hashtags = get_hashtags_from_text(m.caption_text)
+
+        top_hashtags = collections.Counter(hashtags).most_common(n)
+        top_hashtags = [h[0] for h in top_hashtags]
+        return top_hashtags
 
 
 def content_download(
@@ -115,6 +129,7 @@ def main():
         # get medias
         medias = client.get_medias_from_username(target_username)
         if len(medias) == 0:
+            print(f'ERROR: could not get any media from @{target_username}')
             continue
 
         # get most popular pictures by the number of like
@@ -156,10 +171,14 @@ def main():
             if match is not None:
                 model_account = match.group(1)
             else:
-                model_account = ''
+                continue
+
+            # get the original account info
+            hashtags = client.get_top_hashtags(model_account, n=top_tag_n)
 
             # get hashtags
-            hashtags = random.sample(config['templates']['hashtags'], 30)
+            if len(hashtags) < top_tag_n:
+                hashtags += random.sample(config['templates']['hashtags'], top_tag_n - len(hashtags))
 
             # make the caption
             caption = 'Follow @' + account_info['username'] + '\n'
@@ -194,8 +213,7 @@ def main():
             )
 
             break
-        time.sleep(3600 * 4)
-
+        break
 
 if __name__ == '__main__':
     main()
