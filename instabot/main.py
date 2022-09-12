@@ -88,7 +88,7 @@ def main():
                 # upload reels
                 uploaded_media = client.clip_upload(
                     path=media_fpath,
-                    caption='',
+                    caption=m.caption_text,
                 )
                 print(f'Success to upload the reel from @{target_username} !!!')
                 # update the db

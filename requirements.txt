@@ -1,5 +1,0 @@
-instagrapi
-pyyaml
-Pillow
-tinydb
-moviepy
