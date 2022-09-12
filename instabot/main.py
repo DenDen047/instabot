@@ -90,6 +90,15 @@ def main():
                     path=media_fpath,
                     caption='',
                 )
+                print(f'Success to upload the reel from @{target_username} !!!')
+                # update the db
+                db.update(
+                    {
+                        'last_upload': str(datetime.now()),
+                        'used_media_pks': m.pk,
+                    },
+                    Account.username == target_username
+                )
                 time.sleep(500)
             elif m.media_type == 8:  # Album
                 tmp_medias = m.resources
@@ -133,7 +142,7 @@ def main():
             media_fpaths.append(media_fpath)
 
         # make the caption
-        caption = 'Which one do you like most??\nどの写真が好きですか？\n' if len(media_fpaths) > 1 else ''
+        caption = 'Which one do you like most??  どの写真が好きですか？\n' if len(media_fpaths) > 1 else ''
         caption += f'Follow us with beautiful model: {target_username}\n'
         caption += '.\n'*5 + '#' + ' #'.join(top_hashtags)
 
@@ -142,6 +151,7 @@ def main():
             media_fpaths,
             caption=caption
         )
+        print(f'Success to upload the content from {target_username} !!!')
 
         # handle exceptions
         if uploaded_media.caption_text == '':
@@ -152,17 +162,16 @@ def main():
         target_account = db.search(Account.username == target_username)[0]
         media_pks = list(set(media_pks + target_account.get('used_media_pks', [])))
         hashtags = list(set(hashtags + target_account.get('used_hashtags', [])))
-        now = datetime.now()
         db.update(
             {
-                'last_upload': str(now),
+                'last_upload': str(datetime.now()),
                 'used_media_pks': media_pks,
                 'used_hashtags': hashtags,
             },
             Account.username == target_username
         )
 
-        break
+        time.sleep(3600 * 4)
 
 
 if __name__ == '__main__':
