@@ -64,7 +64,6 @@ def new_post(
 
 def main():
     CONFIG_PATH = 'config.yaml'
-    DB_PATH = 'db.json'
     ACCOUNT_LIST_PATH = 'account_list.txt'
 
     top_media_n = 3
@@ -75,6 +74,7 @@ def main():
         config = yaml.safe_load(f)
 
     # load database
+    DB_PATH = config['account']['db']
     db = tinydb.TinyDB(DB_PATH)
 
     # add new users from the account list
