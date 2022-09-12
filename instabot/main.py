@@ -1,5 +1,6 @@
 import yaml
 import time
+import random
 import collections
 from datetime import datetime, timedelta
 
@@ -94,6 +95,7 @@ def main():
         (~ Account.last_upload.exists()) \
         | (today - timedelta(days=60) > Account.last_upload.map(datetime.fromisoformat))
     )
+    random.shuffle(target_users)
 
     # prepare the client module for my acccount
     client = MyClient()
@@ -106,6 +108,7 @@ def main():
         # get medias
         medias = client.get_medias_from_username(target_username)
         if len(medias) == 0:
+            print(f'ERROR: could not get any media from @{target_username}')
             continue
 
         # get most popular pictures by the number of like
@@ -134,6 +137,8 @@ def main():
         # get popular hashtags
         top_hashtags = collections.Counter(hashtags).most_common(top_tag_n)
         top_hashtags = [h[0] for h in top_hashtags]
+        if len(top_hashtags) < top_tag_n:
+            top_hashtags += random.sample(config['templates']['hashtags'], top_tag_n - len(top_hashtags))
 
         # get photos from a target account
         media_info, media_pks, hashtags = new_post(
@@ -156,13 +161,7 @@ def main():
             Account.username == target_username
         )
 
-        # wait for a while
-        time.sleep(3600 * 2)
-
-        # prepare the client module for my acccount
-        client = MyClient()
-        account_info = config['account']
-        client.login(account_info['username'], account_info['password'])
+        break
 
 
 if __name__ == '__main__':
