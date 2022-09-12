@@ -200,6 +200,8 @@ cython_debug/
 
 config.yaml
 tmp/**
+tmp_img/**
+tmp_vid/**
 db.json
 db.sqlite
 account_list.txt
