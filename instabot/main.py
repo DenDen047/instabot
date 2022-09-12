@@ -26,44 +26,6 @@ def get_hashtags_from_text(text: str) -> List[str]:
     return list({tag.strip("#") for tag in text.split() if tag.startswith("#")})
 
 
-def new_post(
-    client: instagrapi.Client,
-    username: str,
-    medias: List[Any],
-    hashtags: List[Any],
-    folder: str,
-):
-    # download the pictures
-    media_pks = []
-    media_fpaths = []
-    for m in medias:
-        if m.media_type == 1:   # Photo
-            media_fpath = client.photo_download(m.pk, folder)
-            if media_fpath.suffix != '.jpg':
-                media_fpath = media_fpath.rename(media_fpath.with_suffix('.jpg'))
-        elif m.media_type == 2 and m.product_type == 'feed':
-            media_fpath = client.video_download(m.pk, folder)
-        elif m.media_type == 2 and m.product_type == 'igtv':
-            media_fpath = client.igtv_download(m.pk, folder)
-        elif m.media_type == 2 and m.product_type == 'clips':
-            media_fpath = client.clip_download(m.pk, folder)
-        else:
-            continue
-        media_pks.append(m.pk)
-        media_fpaths.append(media_fpath)
-
-    # make the caption
-    caption = f'Follow us with beautiful model: {username}\n' + '.\n'*5 + '#' + ' #'.join(hashtags)
-
-    # upload the new post
-    uploaded_media = client.album_upload(
-        media_fpaths,
-        caption=caption
-    )
-
-    return uploaded_media, media_pks, hashtags
-
-
 def main():
     CONFIG_PATH = 'config.yaml'
     ACCOUNT_LIST_PATH = 'account_list.txt'
@@ -118,8 +80,17 @@ def main():
         hashtags = []
         for m in medias:
             # get media
-            if m.media_type == 1 or m.media_type == 2:   # Photo/Video
+            if m.media_type == 1:   # Photo
                 tmp_medias = [m]
+            elif m.media_type == 2: # Video
+                # download the video
+                media_fpath = client.clip_download(m.pk, folder)
+                # upload reels
+                uploaded_media = client.clip_upload(
+                    path=media_fpath,
+                    caption='',
+                )
+                time.sleep(500)
             elif m.media_type == 8:  # Album
                 tmp_medias = m.resources
             else:
@@ -141,12 +112,37 @@ def main():
         if len(top_hashtags) < top_tag_n:
             top_hashtags += random.sample(config['templates']['hashtags'], top_tag_n - len(top_hashtags))
 
-        # get photos from a target account
-        uploaded_media, media_pks, hashtags = new_post(
-            client,
-            target_username, top_medias, top_hashtags,
-            folder=config['resources']['image_folder']
+        # download the pictures
+        media_pks = []
+        media_fpaths = []
+        folder = config['resources']['image_folder']
+        for m in top_medias:
+            if m.media_type == 1:   # Photo
+                media_fpath = client.photo_download(m.pk, folder)
+                if media_fpath.suffix != '.jpg':
+                    media_fpath = media_fpath.rename(media_fpath.with_suffix('.jpg'))
+            elif m.media_type == 2 and m.product_type == 'feed':
+                media_fpath = client.video_download(m.pk, folder)
+            elif m.media_type == 2 and m.product_type == 'igtv':
+                media_fpath = client.igtv_download(m.pk, folder)
+            elif m.media_type == 2 and m.product_type == 'clips':
+                media_fpath = client.clip_download(m.pk, folder)
+            else:
+                continue
+            media_pks.append(m.pk)
+            media_fpaths.append(media_fpath)
+
+        # make the caption
+        caption = 'Which one do you like most??\nどの写真が好きですか？\n' if len(media_fpaths) > 1 else ''
+        caption += f'Follow us with beautiful model: {target_username}\n'
+        caption += '.\n'*5 + '#' + ' #'.join(top_hashtags)
+
+        # upload the new post
+        uploaded_media = client.album_upload(
+            media_fpaths,
+            caption=caption
         )
+
         # handle exceptions
         if uploaded_media.caption_text == '':
             print('Error: Failed upload (empty caption)')
