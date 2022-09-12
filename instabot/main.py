@@ -175,13 +175,18 @@ def main():
 
             # get the original account info
             hashtags = client.get_top_hashtags(model_account, n=top_tag_n)
+            if hashtags is None:
+                continue
 
             # get hashtags
             if len(hashtags) < top_tag_n:
                 hashtags += random.sample(config['templates']['hashtags'], top_tag_n - len(hashtags))
 
             # make the caption
-            caption = 'Follow @' + account_info['username'] + '\n'
+            if len(media_fpaths) > 1:
+                caption = "Which one do you like most?? 😍💙"
+            else:
+                caption = 'Follow @' + account_info['username'] + '\n'
             caption += '.\n' * 4
             caption += f'👤 Model: ★ @{model_account} ☆\n' + '.\n'*3 if len(model_account) > 0 else ''
             caption += '#' + ' #'.join(hashtags)
