@@ -1,3 +1,4 @@
+import sys
 import yaml
 import time
 import random
@@ -141,17 +142,21 @@ def main():
             top_hashtags += random.sample(config['templates']['hashtags'], top_tag_n - len(top_hashtags))
 
         # get photos from a target account
-        media_info, media_pks, hashtags = new_post(
+        uploaded_media, media_pks, hashtags = new_post(
             client,
             target_username, top_medias, top_hashtags,
             folder=config['resources']['image_folder']
         )
-        now = datetime.now()
+        # handle exceptions
+        if uploaded_media.caption_text == '':
+            print('Error: Failed upload (empty caption)')
+            sys.exit(1)
 
         # record the uploaded date
         target_account = db.search(Account.username == target_username)[0]
         media_pks = list(set(media_pks + target_account.get('used_media_pks', [])))
         hashtags = list(set(hashtags + target_account.get('used_hashtags', [])))
+        now = datetime.now()
         db.update(
             {
                 'last_upload': str(now),
